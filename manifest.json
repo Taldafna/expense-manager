@@ -1,0 +1,18 @@
+{
+  "name": "ניהול הוצאות | טל ורון",
+  "short_name": "הוצאות",
+  "description": "מערכת לניהול הוצאות והכנסות חודשיות",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0F172A",
+  "theme_color": "#6366F1",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
