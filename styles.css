@@ -938,13 +938,11 @@ select::-ms-expand {
 .floating-buttons {
     position: fixed !important;
     bottom: var(--spacing-lg) !important;
-    right: var(--spacing-lg) !important;
     left: var(--spacing-lg) !important;
+    right: auto !important;
     display: flex !important;
-    flex-direction: row !important;
+    flex-direction: column !important;
     gap: var(--spacing-sm) !important;
-    max-width: 568px;
-    margin: 0 auto;
     z-index: 100;
 }
 
@@ -2088,19 +2086,16 @@ form {
 
     /* Floating buttons for mobile */
     .floating-buttons {
-        bottom: var(--spacing-lg);
-        right: var(--spacing-lg);
-        left: var(--spacing-lg);
-        width: auto;
-        transform: none;
-        flex-direction: row;
-        justify-content: center;
+        bottom: var(--spacing-md);
+        left: var(--spacing-md);
+        right: auto;
+        width: 120px;
+        flex-direction: column;
     }
 
-    .btn-add-expense,
-    .btn-add-income {
-        flex: 1;
-        padding: var(--spacing-md);
+    .btn-add-expense {
+        padding: var(--spacing-sm) var(--spacing-md);
+        font-size: 0.85rem;
     }
 }
 
