@@ -419,8 +419,9 @@ function renderMonthDashboard() {
     const totalSpent = dataManager.getTotalSpent(app.currentUser, year, month);
     const categories = dataManager.getCategories(app.currentUser);
 
-    // Get deficit from previous month
-    const deficit = dataManager.getPreviousMonthDeficit(app.currentUser, year, month);
+    // Get effective income (actual if set, otherwise forecast)
+    const effectiveIncome = dataManager.getEffectiveIncome(app.currentUser, year, month);
+    const incomeReductionRatio = dataManager.getIncomeReductionRatio(app.currentUser, year, month);
 
     // Calculate total budget (original and adjusted)
     const totalBudget = Object.values(forecast.budgets).reduce((sum, v) => sum + (v || 0), 0);
@@ -430,11 +431,19 @@ function renderMonthDashboard() {
     // Use adjusted budget for remaining calculation
     const remaining = totalAdjustedBudget - totalSpent;
 
-    // Update summary cards
-    document.getElementById('summary-income').textContent = formatCurrency(forecast.income || 0);
+    // Update summary cards - show actual income (or forecast if not set)
+    if (forecast.actualIncome !== null && forecast.actualIncome !== forecast.income) {
+        document.getElementById('summary-income').innerHTML = `
+            <span style="text-decoration: line-through; font-size: 0.75em; opacity: 0.6;">${formatCurrency(forecast.income)}</span>
+            <br>${formatCurrency(effectiveIncome)}
+        `;
+    } else {
+        document.getElementById('summary-income').textContent = formatCurrency(effectiveIncome);
+    }
 
-    // Show adjusted budget if there's a deficit
-    if (deficit > 0) {
+    // Show adjusted budget if there's an income reduction
+    if (incomeReductionRatio > 0) {
+        const reductionPercent = Math.round(incomeReductionRatio * 100);
         document.getElementById('summary-budget').innerHTML = `
             <span style="text-decoration: line-through; font-size: 0.75em; opacity: 0.6;">${formatCurrency(totalBudget)}</span>
             <br>${formatCurrency(totalAdjustedBudget)}
@@ -453,10 +462,14 @@ function renderMonthDashboard() {
 
     if (forecast.actualIncome !== null && forecast.actualIncome !== forecast.income) {
         const diff = forecast.actualIncome - forecast.income;
-        actualIncomeHint.textContent = diff > 0
-            ? `(+${formatCurrency(diff)} מהתחזית)`
-            : `(${formatCurrency(diff)} מהתחזית)`;
-        actualIncomeHint.className = 'actual-income-hint different';
+        const percentDiff = Math.round((diff / forecast.income) * 100);
+        if (diff < 0) {
+            actualIncomeHint.textContent = `(${percentDiff}% מהתחזית - התקציבים קוצצו)`;
+            actualIncomeHint.className = 'actual-income-hint different';
+        } else {
+            actualIncomeHint.textContent = `(+${percentDiff}% מהתחזית)`;
+            actualIncomeHint.className = 'actual-income-hint';
+        }
     } else if (forecast.actualIncome === null) {
         actualIncomeHint.textContent = '(משתמש בתחזית)';
         actualIncomeHint.className = 'actual-income-hint';
@@ -465,26 +478,19 @@ function renderMonthDashboard() {
         actualIncomeHint.className = 'actual-income-hint';
     }
 
-    // Budget Overrun Alert Logic
+    // Income Reduction Alert Logic
     const alertContainer = document.getElementById('overrun-alert-container');
     alertContainer.innerHTML = '';
 
-    if (deficit > 0) {
-        let prevYear = parseInt(year);
-        let prevMonth = parseInt(month) - 1;
-        if (prevMonth === 0) {
-            prevMonth = 12;
-            prevYear -= 1;
-        }
-
-        const reductionPercent = Math.round((deficit / totalBudget) * 100);
+    if (incomeReductionRatio > 0) {
+        const reductionPercent = Math.round(incomeReductionRatio * 100);
         const alertDiv = document.createElement('div');
         alertDiv.className = 'overrun-alert';
         alertDiv.innerHTML = `
-            <div class="icon">🚨</div>
+            <div class="icon">💰</div>
             <div class="overrun-alert-content">
-                <span class="overrun-alert-title">חריגה מחודש ${MONTH_NAMES[prevMonth - 1]}!</span>
-                <span class="overrun-alert-desc">חרגת ב-${formatCurrency(deficit)}. התקציב של כל הקטגוריות קוצץ ב-${reductionPercent}% כדי לאזן.</span>
+                <span class="overrun-alert-title">הכנסה נמוכה מהתחזית!</span>
+                <span class="overrun-alert-desc">הכנסת ${reductionPercent}% פחות מהצפוי. התקציב של כל הקטגוריות קוצץ ב-${reductionPercent}%.</span>
             </div>
         `;
         alertContainer.appendChild(alertDiv);
@@ -518,7 +524,7 @@ function renderMonthDashboard() {
 
         // Show both original and adjusted if different
         let budgetDisplay = formatCurrency(adjustedBudget);
-        if (deficit > 0 && originalBudget !== adjustedBudget) {
+        if (incomeReductionRatio > 0 && originalBudget !== adjustedBudget) {
             budgetDisplay = `<span style="text-decoration: line-through; font-size: 0.9em; opacity: 0.6;">${formatCurrency(originalBudget)}</span> ${formatCurrency(adjustedBudget)}`;
         }
 

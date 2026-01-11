@@ -830,20 +830,25 @@ select::-ms-expand {
    Floating Action Buttons
    ========================================== */
 .floating-buttons {
-    position: fixed;
-    bottom: var(--spacing-lg);
-    right: var(--spacing-lg);
-    left: var(--spacing-lg);
-    display: flex;
-    gap: var(--spacing-sm);
+    position: fixed !important;
+    bottom: var(--spacing-lg) !important;
+    right: var(--spacing-lg) !important;
+    left: var(--spacing-lg) !important;
+    display: flex !important;
+    flex-direction: row !important;
+    gap: var(--spacing-sm) !important;
     max-width: 568px;
     margin: 0 auto;
     z-index: 100;
 }
 
-.btn-add-expense,
-.btn-add-income {
-    flex: 1;
+.floating-buttons .btn-add-expense,
+.floating-buttons .btn-add-income {
+    position: relative !important;
+    flex: 1 !important;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
     padding: var(--spacing-md) var(--spacing-lg);
     border: none;
     border-radius: var(--radius-lg);
@@ -858,31 +863,31 @@ select::-ms-expand {
     box-shadow: var(--shadow);
 }
 
-.btn-add-expense {
+.floating-buttons .btn-add-expense {
     background: var(--accent-gradient);
     color: white;
 }
 
-.btn-add-expense:hover {
-    transform: translateY(-2px);
+.floating-buttons .btn-add-expense:hover {
+    transform: translateY(-2px) !important;
     box-shadow: var(--shadow-glow);
 }
 
-.btn-add-expense span {
+.floating-buttons .btn-add-expense span {
     font-size: 1.25rem;
 }
 
-.btn-add-income {
+.floating-buttons .btn-add-income {
     background: linear-gradient(135deg, var(--success), #34d399);
     color: white;
 }
 
-.btn-add-income:hover {
-    transform: translateY(-2px);
+.floating-buttons .btn-add-income:hover {
+    transform: translateY(-2px) !important;
     box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
 }
 
-.btn-add-income span {
+.floating-buttons .btn-add-income span {
     font-size: 1.1rem;
 }
 

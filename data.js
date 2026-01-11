@@ -247,19 +247,32 @@ class DataManager {
         return 0;
     }
 
-    // Get adjusted budget for a category (after deficit reduction)
+    // Get income reduction ratio (if actual income < forecast income)
+    getIncomeReductionRatio(userId, year, month) {
+        const forecast = this.getForecast(userId, year, month);
+        const forecastIncome = forecast.income || 0;
+        const actualIncome = forecast.actualIncome;
+
+        // If no actual income set or actual >= forecast, no reduction
+        if (actualIncome === null || forecastIncome === 0 || actualIncome >= forecastIncome) {
+            return 0;
+        }
+
+        // Calculate reduction ratio
+        return (forecastIncome - actualIncome) / forecastIncome;
+    }
+
+    // Get adjusted budget for a category (based on income difference)
     getAdjustedBudget(userId, year, month, category) {
         const forecast = this.getForecast(userId, year, month);
         const originalBudget = forecast.budgets[category] || 0;
-        const totalBudget = Object.values(forecast.budgets).reduce((sum, v) => sum + (v || 0), 0);
 
-        if (totalBudget === 0) return 0;
+        if (originalBudget === 0) return 0;
 
-        const deficit = this.getPreviousMonthDeficit(userId, year, month);
-        if (deficit === 0) return originalBudget;
+        const reductionRatio = this.getIncomeReductionRatio(userId, year, month);
+        if (reductionRatio === 0) return originalBudget;
 
         // Reduce proportionally
-        const reductionRatio = deficit / totalBudget;
         const reduction = originalBudget * reductionRatio;
         return Math.max(0, originalBudget - reduction);
     }
