@@ -165,10 +165,6 @@ function setupEventListeners() {
         openExpenseModal();
     });
 
-    // Add income button
-    document.getElementById('btn-add-income').addEventListener('click', () => {
-        openIncomeModal();
-    });
 
     // Close income modal
     document.getElementById('btn-close-income').addEventListener('click', closeIncomeModal);
