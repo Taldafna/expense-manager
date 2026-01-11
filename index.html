@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ניהול הוצאות | טל ורון</title>
+    <meta name="description" content="מערכת לניהול הוצאות והכנסות חודשיות">
+    <link rel="stylesheet" href="styles.css?v=18">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#6366F1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- User Selection Screen -->
+        <div id="screen-user-select" class="screen active">
+            <div class="user-select-container">
+                <h1 class="app-title">ניהול הוצאות</h1>
+                <p class="app-subtitle">בחרו משתמש להמשך</p>
+                <div class="user-cards">
+                    <button class="user-card" data-user="tal">
+                        <div class="user-avatar avatar-tal">ט</div>
+                        <span class="user-name">טל</span>
+                    </button>
+                    <button class="user-card" data-user="ron">
+                        <div class="user-avatar avatar-ron">ר</div>
+                        <span class="user-name">רון</span>
+                    </button>
+                    <button class="user-card" data-user="shared">
+                        <div class="user-avatar avatar-shared">👭</div>
+                        <span class="user-name">משותף</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Menu Screen -->
+        <div id="screen-menu" class="screen">
+            <header class="header">
+                <button class="btn-back" id="btn-back-to-users">
+                    <span class="icon">←</span>
+                </button>
+                <h1 class="header-title">שלום, <span id="current-user-name"></span></h1>
+                <button class="btn-icon" id="btn-settings">⚙️</button>
+            </header>
+            <nav class="main-nav">
+                <button class="nav-card" data-screen="forecast">
+                    <span class="nav-icon">📅</span>
+                    <span class="nav-title">תחזית שנתית</span>
+                    <span class="nav-desc">הגדרת הכנסות ותקציבים</span>
+                </button>
+                <button class="nav-card" data-screen="month">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-title">חודש נוכחי</span>
+                    <span class="nav-desc">דשבורד והוצאות</span>
+                </button>
+                <button class="nav-card" data-screen="analytics">
+                    <span class="nav-icon">🔍</span>
+                    <span class="nav-title">ניתוח נתונים</span>
+                    <span class="nav-desc">תובנות וגרפים</span>
+                </button>
+                <button class="nav-card" data-screen="stats">
+                    <span class="nav-icon">📈</span>
+                    <span class="nav-title">סטטיסטיקות</span>
+                    <span class="nav-desc">ממוצעים והשוואות</span>
+                </button>
+                <button class="nav-card" data-screen="categories">
+                    <span class="nav-icon">🏷️</span>
+                    <span class="nav-title">קטגוריות</span>
+                    <span class="nav-desc">ניהול קטגוריות</span>
+                </button>
+                <button class="nav-card" data-screen="history">
+                    <span class="nav-icon">🔍</span>
+                    <span class="nav-title">חיפוש והיסטוריה</span>
+                    <span class="nav-desc">כל ההוצאות במקום אחד</span>
+                </button>
+                <button class="nav-card" data-screen="wishlist">
+                    <span class="nav-icon">🎯</span>
+                    <span class="nav-title">יעדי רכישה</span>
+                    <span class="nav-desc">חוסכים לדברים גדולים</span>
+                </button>
+                <button class="nav-card" data-screen="shared">
+                    <span class="nav-icon">👫</span>
+                    <span class="nav-title">תצוגה משותפת</span>
+                    <span class="nav-desc">טל ורון זה לצד זה</span>
+                </button>
+                <button class="nav-card" data-screen="export">
+                    <span class="nav-icon">💾</span>
+                    <span class="nav-title">ייצוא/ייבוא</span>
+                    <span class="nav-desc">גיבוי ושחזור נתונים</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Annual Forecast Screen -->
+        <div id="screen-forecast" class="screen">
+            <header class="header">
+                <button class="btn-back" data-back="menu">
+                    <span class="icon">←</span>
+                </button>
+                <h1 class="header-title">תחזית שנתית</h1>
+                <div class="year-selector">
+                    <button class="btn-year" id="btn-prev-year">◀</button>
+                    <span id="forecast-year">2026</span>
+                    <button class="btn-year" id="btn-next-year">▶</button>
+                </div>
+            </header>
+            <div class="forecast-content">
+                <div class="forecast-tabs">
+                    <button class="tab active" data-tab="income">הכנסות</button>
+                    <button class="tab" data-tab="budgets">תקציבים</button>
+                </div>
+                <div id="forecast-income" class="forecast-table-container">
+                    <table class="forecast-table">
+                        <thead>
+                            <tr>
+                                <th>חודש</th>
+                                <th>הכנסה צפויה</th>
+                                <th>חיסכון מתוכנן</th>
+                                <th>פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="income-table-body"></tbody>
+                    </table>
+                </div>
+                <div id="forecast-budgets" class="forecast-table-container hidden">
+                    <div class="budget-month-selector">
+                        <label>בחר חודש:</label>
+                        <select id="budget-month-select"></select>
+                        <button class="btn-copy" id="btn-copy-budget">העתק לכל השנה</button>
+                    </div>
+                    <table class="forecast-table">
+                        <thead>
+                            <tr>
+                                <th>קטגוריה</th>
+                                <th>תקציב</th>
+                            </tr>
+                        </thead>
+                        <tbody id="budget-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Dashboard Screen -->
+        <div id="screen-month" class="screen">
+            <header class="header">
+                <button class="btn-back" data-back="menu">
+                    <span class="icon">←</span>
+                </button>
+                <h1 class="header-title">דשבורד חודשי</h1>
+                <div class="date-selectors">
+                    <select id="year-select" class="year-dropdown"></select>
+                    <select id="month-select" class="month-dropdown"></select>
+                </div>
+            </header>
+            <div class="dashboard-content">
+                <div id="overrun-alert-container"></div>
+                <div class="summary-cards">
+                    <div class="summary-card income">
+                        <span class="summary-label">הכנסה צפויה</span>
+                        <span class="summary-value" id="summary-income">₪0</span>
+                    </div>
+                    <div class="summary-card budget">
+                        <span class="summary-label">תקציב כולל</span>
+                        <span class="summary-value" id="summary-budget">₪0</span>
+                    </div>
+                    <div class="summary-card spent">
+                        <span class="summary-label">סה"כ הוצאות</span>
+                        <span class="summary-value" id="summary-spent">₪0</span>
+                    </div>
+                    <div class="summary-card remaining">
+                        <span class="summary-label">נותר</span>
+                        <span class="summary-value" id="summary-remaining">₪0</span>
+                    </div>
+                </div>
+
+                <!-- Actual Income Section -->
+                <div class="actual-income-section">
+                    <div class="actual-income-row">
+                        <span class="actual-income-label">💰 הכנסה בפועל החודש:</span>
+                        <input type="number" id="actual-income-input" min="0" placeholder="השאר ריק לשימוש בתחזית">
+                        <span class="actual-income-hint" id="actual-income-hint"></span>
+                    </div>
+                </div>
+
+
+                <!-- Savings Section -->
+                <div class="savings-section">
+                    <div class="savings-header">
+                        <span class="savings-label">🎯 חיסכון צפוי (הכנסה − תקציבים):</span>
+                        <span class="savings-value" id="planned-savings">₪0</span>
+                    </div>
+                    <div class="savings-inputs-row">
+                        <div class="savings-input-group">
+                            <label>🏦 בנק:</label>
+                            <input type="number" id="savings-bank" min="0" placeholder="0">
+                        </div>
+                        <div class="savings-input-group">
+                            <label>📈 קופת גמל:</label>
+                            <input type="number" id="savings-pension" min="0" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="savings-totals">
+                        <span>סה"כ שנתי: </span>
+                        <span id="yearly-savings-bank">🏦 ₪0</span>
+                        <span> | </span>
+                        <span id="yearly-savings-pension">📈 ₪0</span>
+                        <span> | </span>
+                        <span id="yearly-savings-total" style="font-weight: 600;">סה"כ: ₪0</span>
+                    </div>
+                    <div class="savings-summary">
+                        <div class="savings-diff" id="savings-diff"></div>
+                    </div>
+                </div>
+
+                <div class="categories-progress" id="categories-progress"></div>
+                <div class="dashboard-actions">
+                    <button class="btn-secondary" id="btn-manage-recurring">📂 ניהול קבועות</button>
+                    <button class="btn-secondary" id="btn-apply-recurring">🔄 החל קבועות</button>
+                </div>
+                <button class="btn-add-expense" id="btn-add-expense">
+                    <span>+</span> הוסף הוצאה
+                </button>
+            </div>
+        </div>
+
+        <!-- Add Expense Modal -->
+        <div id="modal-expense" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>הוספת הוצאה</h2>
+                    <button class="btn-close" id="btn-close-expense">×</button>
+                </div>
+                <form id="expense-form">
+                    <div class="form-group">
+                        <label for="expense-amount">סכום</label>
+                        <input type="number" id="expense-amount" required min="0" step="0.01" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="expense-category">קטגוריה</label>
+                        <select id="expense-category" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="expense-date">תאריך</label>
+                        <input type="date" id="expense-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expense-note">הערה (אופציונלי)</label>
+                        <input type="text" id="expense-note" placeholder="תיאור קצר">
+                    </div>
+                    <div class="form-group installment-toggle">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="expense-installment">
+                            <span>הוצאה בתשלומים</span>
+                        </label>
+                    </div>
+                    <div id="installment-options" class="installment-options hidden">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="expense-total-amount">סכום כולל</label>
+                                <input type="number" id="expense-total-amount" min="0" step="0.01" placeholder="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="expense-num-payments">מספר תשלומים</label>
+                                <input type="number" id="expense-num-payments" min="2" max="36" value="3">
+                            </div>
+                        </div>
+                        <p class="installment-info" id="installment-info"></p>
+                    </div>
+                    <button type="submit" class="btn-submit">הוסף הוצאה</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Edit Expense Modal -->
+        <div id="modal-edit-expense" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>עריכת הוצאה</h2>
+                    <button class="btn-close" id="btn-close-edit-expense">×</button>
+                </div>
+                <form id="edit-expense-form">
+                    <input type="hidden" id="edit-expense-id">
+                    <div class="form-group">
+                        <label for="edit-expense-amount">סכום</label>
+                        <input type="number" id="edit-expense-amount" required min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-expense-category">קטגוריה</label>
+                        <select id="edit-expense-category" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-expense-date">תאריך</label>
+                        <input type="date" id="edit-expense-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-expense-note">הערה</label>
+                        <input type="text" id="edit-expense-note">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit">שמור שינויים</button>
+                        <button type="button" class="btn-delete" id="btn-delete-expense">מחק הוצאה</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Expenses List -->
+        <div id="screen-expenses-list" class="screen">
+            <header class="header">
+                <button class="btn-back" data-back="month">
+                    <span class="icon">←</span>
+                </button>
+                <h1 class="header-title">רשימת הוצאות</h1>
+                <span id="expenses-category-title"></span>
+            </header>
+            <div class="expenses-list" id="expenses-list"> </div>
+        </div>
+
+        <!-- Manage Recurring Modal -->
+        <div id="modal-recurring" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>הוצאות קבועות</h2>
+                    <button class="btn-close" id="btn-close-recurring">×</button>
+                </div>
+                <div class="recurring-list" id="recurring-list-container">
+                    <!-- Templates go here -->
+                </div>
+                <hr>
+                <div class="recurring-add-form">
+                    <h3>הוספת תבנית קבועה</h3>
+                    <div class="form-group">
+                        <label>קטגוריה</label>
+                        <select id="recurring-category"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>סכום</label>
+                        <input type="number" id="recurring-amount" placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label>הערה</label>
+                        <input type="text" id="recurring-note" placeholder="תיאור">
+                    </div>
+                    <button class="btn-add-expense" id="btn-save-recurring-template">הוסף לתבנית</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wishlist Goal Modal -->
+        <div id="modal-wishlist" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>הוספת יעד רכישה</h2>
+                    <button class="btn-close" id="btn-close-wishlist">×</button>
+                </div>
+                <form id="wishlist-form">
+                    <div class="form-group">
+                        <label>שם היעד</label>
+                        <input type="text" id="wishlist-name" required placeholder="למשל: טיסה לתאילנד">
+                    </div>
+                    <div class="form-group">
+                        <label>סכום יעד</label>
+                        <input type="number" id="wishlist-amount" required placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label>סכום שכבר נחסך</label>
+                        <input type="number" id="wishlist-saved" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>הערות</label>
+                        <input type="text" id="wishlist-note" placeholder="פרטים נוספים">
+                    </div>
+                    <button type="submit" class="btn-add-expense">שמור יעד</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Categories Management Screen -->
+        <div id="screen-categories" class="screen">
+            <header class="header">
+                <button class="btn-back" data-back="menu">
+                    <span class="icon">←</span>
+                </button>
+                <h1 class="header-title">ניהול קטגוריות</h1>
+                <button class="btn-icon" id="btn-add-category">➕</button>
+            </header>
+            <div class="categories-list" id="categories-list"></div>
+        </div>
+
+        <!-- Add/Edit Category Modal -->
+        <div id="modal-category" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="category-modal-title">הוספת קטגוריה</h2>
+                    <button class="btn-close" id="btn-close-category">×</button>
+                </div>
+                <form id="category-form">
+                    <input type="hidden" id="category-edit-index">
+                    <div class="form-group">
+                        <label for="category-name">שם הקטגוריה</label>
+                        <input type="text" id="category-name" required placeholder="הזן שם קטגוריה">
+                    </div>
+                    <button type="submit" class="btn-submit">שמור</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Analytics Screen -->
+        <div id="screen-analytics" class="screen">
+            <header class="header">
+                <button class="btn-back" data-back="menu">
+                    <span class="icon">←</span>
+                </button>
+                <h1 class="header-title">ניתוח נתונים</h1>
+                <div class="year-selector">
+                    <button class="btn-year" id="btn-prev-analytics-year">◀</button>
+                    <span id="analytics-year">2026</span>
+                    <button class="btn-year" id="btn-next-analytics-year">▶</button>
+                </div>
+            </header>
+            <div class="analytics-content">
+                <!-- Insights Cards -->
+                <div class="insights-grid" id="insights-grid"></div>
+
+                <!-- Charts -->
+                <div class="chart-container">
+                    <h3>📊 מגמת הכנסות והוצאות</h3>
+                    <canvas id="income-expense-chart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h3>💰 חיסכון לפי חודשים</h3>
+                    <canvas id="savings-chart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h3>📈 חריגות מתקציב לפי קטגוריה</h3>
+                    <canvas id="category-overrun-chart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h3>🎯 עמידה ביעדי חיסכון</h3>
+                    <canvas id="savings-goals-chart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h3>👥 השוואת משתמשים (טל vs רון)</h3>
+                    <canvas id="user-comparison-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Screen -->
+        <div id="screen-stats" class="screen">
+            <header class="header">
+                <button class="btn-back" data-back="menu">
+                    <span class="icon">←</span>
+                </button>
+                <h1 class="header-title">סטטיסטיקות</h1>
+            </header>
+            <div class="stats-content">
+                <div class="stats-summary">
+                    <h3>סיכום שנתי</h3>
+                    <div class="stats-grid" id="stats-summary-grid"></div>
+                </div>
+                <div class="stats-categories">
+                    <h3>ממוצע וחציון לפי קטגוריה</h3>
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th>קטגוריה</th>
+                                <th>ממוצע</th>
+                                <th>חציון</th>
+                                <th>סה"כ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stats-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Screen -->
+        <div id="screen-history" class="screen">
+            <header class="header">
+                <button class="btn-back" data-back="menu">
+                    <span class="icon">←</span>
+                </button>
+                <h1 class="header-title">היסטוריית עסקאות</h1>
+            </header>
+            <div class="history-content">
+                <div class="search-box">
+                    <input type="text" id="history-search" placeholder="חפשי לפי תיאור או סכום...">
+                    <button class="btn-icon">🔍</button>
+                </div>
+                <div class="filter-row">
+                    <select id="history-filter-category"></select>
+                    <select id="history-filter-user">
+                        <option value="current">משתמש נוכחי</option>
+                        <option value="all">כל המשתמשים</option>
+                    </select>
+                </div>
+                <div class="history-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>תאריך</th>
+                                <th>קטגוריה</th>
+                                <th>תיאור</th>
+                                <th>סכום</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wishlist Screen -->
+        <div id="screen-wishlist" class="screen">
+            <header class="header">
+                <button class="btn-back" data-back="menu">
+                    <span class="icon">←</span>
+                </button>
+                <h1 class="header-title">יעדי רכישה</h1>
+                <button class="btn-icon" id="btn-add-goal">➕</button>
+            </header>
+            <div class="wishlist-content" id="wishlist-grid">
+                <!-- Goals will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Shared Household Dashboard Screen -->
+        <div id="screen-shared" class="screen">
+            <header class="header">
+                <button class="btn-back" data-back="user-select">
+                    <span class="icon">←</span>
+                </button>
+                <h1 class="header-title">דשבורד משותף 👫</h1>
+            </header>
+
+            <div class="shared-selectors">
+                <select id="shared-year-select" class="selector-input"></select>
+                <select id="shared-month-select" class="selector-input"></select>
+            </div>
+
+            <!-- Combined Summary Grid -->
+            <div class="summary-grid">
+                <div class="summary-card income">
+                    <span class="summary-label">הכנסה משותפת</span>
+                    <span class="summary-value" id="shared-summary-income">₪0</span>
+                </div>
+                <div class="summary-card budget">
+                    <span class="summary-label">תקציב משותף</span>
+                    <span class="summary-value" id="shared-summary-budget">₪0</span>
+                </div>
+                <div class="summary-card spent">
+                    <span class="summary-label">הוצאות משותפות</span>
+                    <span class="summary-value" id="shared-summary-spent">₪0</span>
+                </div>
+                <div class="summary-card remaining">
+                    <span class="summary-label">נותר משותף</span>
+                    <span class="summary-value" id="shared-summary-remaining">₪0</span>
+                </div>
+            </div>
+
+            <div class="shared-content">
+                <div class="shared-comparison-section">
+                    <h3>📂 השוואת הוצאות לפי קטגוריות</h3>
+                    <div class="table-container">
+                        <table class="expense-table shared-table">
+                            <thead>
+                                <tr>
+                                    <th>קטגוריה</th>
+                                    <th>טל 💖</th>
+                                    <th>רון 💙</th>
+                                    <th>סה"כ קבוצתי</th>
+                                </tr>
+                            </thead>
+                            <tbody id="shared-comparison-table-body">
+                                <!-- Categorized data will be rendered here -->
+                            </tbody>
+                            <tfoot>
+                                <tr class="total-row">
+                                    <td>סה"כ כללי</td>
+                                    <td id="shared-total-tal">₪0</td>
+                                    <td id="shared-total-ron">₪0</td>
+                                    <td id="shared-total-combined">₪0</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="shared-charts-grid">
+                    <div class="chart-card">
+                        <h3>חלוקת הוצאות משותפת</h3>
+                        <div class="chart-container" id="shared-chart-container">
+                            <canvas id="shared-expenses-chart"></canvas>
+                            <div id="shared-chart-empty" class="chart-empty-msg hidden">
+                                <span>אין נתונים להצגה בחודש זה 🤷‍♂️</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="debug-version">v18</div>
+        </div>
+
+        <!-- Export/Import Screen -->
+        <div id="screen-export" class="screen">
+            <header class="header">
+                <button class="btn-back" data-back="menu">
+                    <span class="icon">←</span>
+                </button>
+                <h1 class="header-title">ייצוא/ייבוא</h1>
+            </header>
+            <div class="export-content">
+                <div class="export-section">
+                    <h3>ייצוא נתונים</h3>
+                    <button class="btn-export" id="btn-export-json">
+                        <span class="icon">📄</span>
+                        ייצוא ל-JSON (גיבוי מלא)
+                    </button>
+                    <button class="btn-export" id="btn-export-excel">
+                        <span class="icon">📊</span>
+                        ייצוא ל-Excel
+                    </button>
+                </div>
+                <div class="export-section">
+                    <h3>ייבוא נתונים</h3>
+                    <label class="btn-import">
+                        <span class="icon">📥</span>
+                        ייבוא מ-JSON
+                        <input type="file" id="import-json" accept=".json" hidden>
+                    </label>
+                    <label class="btn-import">
+                        <span class="icon">📥</span>
+                        ייבוא מ-Excel
+                        <input type="file" id="import-excel" accept=".xlsx,.xls" hidden>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="data.js?v=8"></script>
+    <script src="excel.js?v=7"></script>
+    <script src="app.js?v=14"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW Registered'))
+                    .catch(err => console.log('SW Error', err));
+            });
+        }
+    </script>
+</body>
+
+</html>
