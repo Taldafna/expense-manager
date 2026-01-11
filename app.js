@@ -150,6 +150,23 @@ function setupEventListeners() {
         openExpenseModal();
     });
 
+    // Add income button
+    document.getElementById('btn-add-income').addEventListener('click', () => {
+        openIncomeModal();
+    });
+
+    // Close income modal
+    document.getElementById('btn-close-income').addEventListener('click', closeIncomeModal);
+    document.getElementById('modal-income').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-income') closeIncomeModal();
+    });
+
+    // Income form submit
+    document.getElementById('income-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveIncome();
+    });
+
     // Close expense modal
     document.getElementById('btn-close-expense').addEventListener('click', closeExpenseModal);
     document.getElementById('modal-expense').addEventListener('click', (e) => {
@@ -638,6 +655,42 @@ function populateCategoryDropdown(selectId) {
         option.textContent = category;
         select.appendChild(option);
     });
+}
+
+// ==========================================
+// Income Management
+// ==========================================
+
+function openIncomeModal() {
+    document.getElementById('income-amount').value = '';
+    document.getElementById('income-source').value = 'משכורת';
+    document.getElementById('income-note').value = '';
+    document.getElementById('modal-income').classList.add('active');
+}
+
+function closeIncomeModal() {
+    document.getElementById('modal-income').classList.remove('active');
+}
+
+function saveIncome() {
+    const amount = parseFloat(document.getElementById('income-amount').value) || 0;
+    const source = document.getElementById('income-source').value;
+    const note = document.getElementById('income-note').value;
+
+    const year = app.currentYear.toString();
+    const month = app.currentMonth;
+
+    // Get current actual income and add to it
+    const forecast = dataManager.getForecast(app.currentUser, year, month);
+    const currentActualIncome = forecast.actualIncome !== null ? forecast.actualIncome : forecast.income;
+    const newTotal = currentActualIncome + amount;
+
+    // Save the new total
+    dataManager.setActualIncome(app.currentUser, year, month, newTotal);
+
+    closeIncomeModal();
+    showToast(`הכנסה נוספה: ${formatCurrency(amount)} (${source}${note ? ' - ' + note : ''})`, 'success');
+    renderMonthDashboard();
 }
 
 // ==========================================

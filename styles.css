@@ -827,6 +827,70 @@ select::-ms-expand {
 }
 
 /* ==========================================
+   Floating Action Buttons
+   ========================================== */
+.floating-buttons {
+    position: fixed;
+    bottom: var(--spacing-lg);
+    right: var(--spacing-lg);
+    left: var(--spacing-lg);
+    display: flex;
+    gap: var(--spacing-sm);
+    max-width: 568px;
+    margin: 0 auto;
+    z-index: 100;
+}
+
+.btn-add-expense,
+.btn-add-income {
+    flex: 1;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-normal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    box-shadow: var(--shadow);
+}
+
+.btn-add-expense {
+    background: var(--accent-gradient);
+    color: white;
+}
+
+.btn-add-expense:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow);
+}
+
+.btn-add-expense span {
+    font-size: 1.25rem;
+}
+
+.btn-add-income {
+    background: linear-gradient(135deg, var(--success), #34d399);
+    color: white;
+}
+
+.btn-add-income:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
+}
+
+.btn-add-income span {
+    font-size: 1.1rem;
+}
+
+.btn-income-submit {
+    background: linear-gradient(135deg, var(--success), #34d399) !important;
+}
+
+/* ==========================================
    Analytics Screen
    ========================================== */
 .analytics-content {
