@@ -975,37 +975,7 @@ select::-ms-expand {
     max-height: 200px;
 }
 
-/* ==========================================
-   Add Expense Button
-   ========================================== */
-.btn-add-expense {
-    position: fixed;
-    bottom: var(--spacing-xl);
-    left: 50%;
-    transform: translateX(-50%);
-    padding: var(--spacing-md) var(--spacing-xl);
-    background: var(--accent-gradient);
-    border: none;
-    border-radius: var(--radius-xl);
-    color: white;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    box-shadow: var(--shadow-glow);
-    transition: var(--transition-normal);
-}
-
-.btn-add-expense:hover {
-    transform: translateX(-50%) scale(1.05);
-}
-
-.btn-add-expense span {
-    font-size: 1.5rem;
-    font-weight: 300;
-}
+/* Old btn-add-expense styles removed - now using .floating-buttons */
 
 /* ==========================================
    Modal
