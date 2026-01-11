@@ -431,6 +431,20 @@ body::before {
     border-color: var(--accent-primary);
 }
 
+/* Calculated savings cells in income table */
+.calculated-savings {
+    font-weight: 600;
+    text-align: center !important;
+}
+
+.calculated-savings.positive {
+    color: var(--success);
+}
+
+.calculated-savings.negative {
+    color: var(--danger);
+}
+
 .budget-month-selector {
     display: flex;
     align-items: center;

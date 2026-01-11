@@ -306,6 +306,11 @@ function renderIncomeTable() {
         const monthStr = m.toString().padStart(2, '0');
         const forecast = dataManager.getForecast(app.currentUser, app.currentYear.toString(), monthStr);
 
+        // Calculate savings: income - total budgets
+        const income = forecast.income || 0;
+        const totalBudget = Object.values(forecast.budgets).reduce((sum, v) => sum + (v || 0), 0);
+        const calculatedSavings = income - totalBudget;
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${MONTH_NAMES[m - 1]}</td>
@@ -314,10 +319,8 @@ function renderIncomeTable() {
                        data-month="${monthStr}" data-field="income"
                        placeholder="0" min="0">
             </td>
-            <td>
-                <input type="number" value="${forecast.plannedSavings || ''}" 
-                       data-month="${monthStr}" data-field="savings"
-                       placeholder="0" min="0">
+            <td class="calculated-savings ${calculatedSavings < 0 ? 'negative' : 'positive'}">
+                ${formatCurrency(calculatedSavings)}
             </td>
             <td>
                 <button class="btn-copy-income" data-month="${monthStr}" title="העתק לכל השנה">📋</button>
@@ -331,14 +334,7 @@ function renderIncomeTable() {
         input.addEventListener('change', (e) => {
             const month = e.target.dataset.month;
             dataManager.setIncome(app.currentUser, app.currentYear.toString(), month, e.target.value);
-        });
-    });
-
-    // Event listeners for savings inputs
-    tbody.querySelectorAll('input[data-field="savings"]').forEach(input => {
-        input.addEventListener('change', (e) => {
-            const month = e.target.dataset.month;
-            dataManager.setPlannedSavings(app.currentUser, app.currentYear.toString(), month, e.target.value);
+            renderIncomeTable(); // Refresh to update calculated savings
         });
     });
 
@@ -350,10 +346,9 @@ function renderIncomeTable() {
             for (let m = 1; m <= 12; m++) {
                 const monthStr = m.toString().padStart(2, '0');
                 dataManager.setIncome(app.currentUser, app.currentYear.toString(), monthStr, forecast.income);
-                dataManager.setPlannedSavings(app.currentUser, app.currentYear.toString(), monthStr, forecast.plannedSavings);
             }
             renderIncomeTable();
-            showToast('ההכנסה והחיסכון הועתקו לכל החודשים', 'success');
+            showToast('ההכנסה הועתקה לכל החודשים', 'success');
         });
     });
 }
