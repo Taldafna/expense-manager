@@ -2,28 +2,28 @@
    CSS Variables & Reset
    ========================================== */
 :root {
-    /* Colors - Dark Theme */
-    --bg-primary: #0a0a1a;
-    --bg-secondary: #12122a;
-    --bg-card: rgba(30, 30, 60, 0.6);
-    --bg-card-hover: rgba(40, 40, 80, 0.8);
-    --bg-glass: rgba(255, 255, 255, 0.05);
+    /* Colors - Dark Theme (Obsidian & Indigo) */
+    --bg-primary: #020617;
+    --bg-secondary: #0f172a;
+    --bg-card: rgba(30, 41, 59, 0.7);
+    --bg-card-hover: rgba(51, 65, 85, 0.9);
+    --bg-glass: rgba(255, 255, 255, 0.03);
 
-    --text-primary: #ffffff;
-    --text-secondary: #a0a0c0;
-    --text-muted: #606080;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
 
-    --accent-primary: #6366f1;
-    --accent-secondary: #8b5cf6;
-    --accent-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
+    --accent-primary: #818cf8;
+    --accent-secondary: #c084fc;
+    --accent-gradient: linear-gradient(135deg, #818cf8, #c084fc);
 
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
+    --success: #34d399;
+    --warning: #fbbf24;
+    --danger: #f87171;
 
-    --border-color: rgba(255, 255, 255, 0.1);
-    --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.3);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 0 20px rgba(129, 140, 248, 0.15);
 
     /* Spacing */
     --spacing-xs: 0.25rem;
@@ -41,9 +41,38 @@
     --radius-full: 50%;
 
     /* Transitions */
-    --transition-fast: 0.15s ease;
-    --transition-normal: 0.3s ease;
-    --transition-slow: 0.5s ease;
+    --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Light Theme Overrides */
+body.light-theme {
+    --bg-primary: #f0f2f5;
+    --bg-secondary: #ffffff;
+    --bg-card: rgba(255, 255, 255, 0.7);
+    --bg-card-hover: rgba(255, 255, 255, 0.9);
+    --bg-glass: rgba(0, 0, 0, 0.03);
+
+    --text-primary: #1a1a1a;
+    --text-secondary: #4b5563;
+    --text-muted: #9ca3af;
+
+    --border-color: rgba(0, 0, 0, 0.08);
+    --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
+}
+
+body.light-theme.theme-tal {
+    --bg-primary: #fff1f2 !important;
+    --bg-secondary: #ffffff !important;
+    --bg-card: rgba(255, 255, 255, 0.8) !important;
+}
+
+body.light-theme.theme-ron {
+    --bg-primary: #eff6ff !important;
+    --bg-secondary: #ffffff !important;
+    --bg-card: rgba(255, 255, 255, 0.8) !important;
 }
 
 /* User Themes */
@@ -1424,6 +1453,81 @@ form {
 }
 
 /* ==========================================
+   Recurring Expenses & Goals
+   ========================================== */
+.recurring-list {
+    margin-top: var(--spacing-md);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.recurring-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-surface);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-xs);
+    border-right: 4px solid var(--accent-primary);
+}
+
+.recurring-item-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.recurring-item-note {
+    font-weight: 600;
+}
+
+.recurring-item-meta {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.goal-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+}
+
+.goal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.goal-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.goal-progress-container {
+    height: 12px;
+    background: var(--bg-glass);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: var(--spacing-md) 0;
+}
+
+.goal-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+    transition: width 0.5s ease;
+}
+
+.goal-footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+/* ==========================================
    Export/Import
    ========================================== */
 .export-content {
@@ -1863,9 +1967,204 @@ form {
     padding-bottom: var(--spacing-md);
 }
 
+/* ==========================================
+   Mobile Responsiveness
+   ========================================== */
+@media (max-width: 768px) {
+    :root {
+        --spacing-lg: 1rem;
+        --spacing-xl: 1.25rem;
+    }
+
+    .app-container {
+        padding: var(--spacing-sm);
+    }
+
+    .header {
+        padding: var(--spacing-md) 0;
+    }
+
+    .header-title {
+        font-size: 1.25rem;
+    }
+
+    .main-nav {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+
+    .nav-card {
+        flex-direction: row;
+        text-align: right;
+        padding: var(--spacing-md);
+        gap: var(--spacing-md);
+    }
+
+    .nav-icon {
+        font-size: 1.5rem;
+        margin-bottom: 0;
+    }
+
+    .nav-desc {
+        display: none;
+    }
+
+    /* Dashboard adjustments */
+    .summary-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Modal adjustments */
+    .modal-content {
+        padding: var(--spacing-lg);
+        margin: var(--spacing-md);
+        width: calc(100% - 2 * var(--spacing-md));
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+
+    /* Forecast tables */
+    .forecast-table-container {
+        overflow-x: auto;
+    }
+
+    .forecast-table th,
+    .forecast-table td {
+        padding: var(--spacing-sm);
+        font-size: 0.85rem;
+    }
+
+    .forecast-table input {
+        max-width: 80px;
+        font-size: 0.9rem;
+    }
+
+    .budget-month-selector {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn-copy,
+    .btn-save-savings {
+        width: 100%;
+    }
+
+    /* Floating buttons for mobile */
+    .floating-buttons {
+        bottom: var(--spacing-lg);
+        right: var(--spacing-lg);
+        left: var(--spacing-lg);
+        width: auto;
+        transform: none;
+        flex-direction: row;
+        justify-content: center;
+    }
+
+    .btn-add-expense,
+    .btn-add-income {
+        flex: 1;
+        padding: var(--spacing-md);
+    }
+}
+
+
+
+.btn-whatsapp {
+    background: #25D366;
+    color: white;
+    border: none;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-weight: 600;
+    transition: var(--transition-fast);
+    margin: var(--spacing-xs);
+}
+
+.btn-whatsapp:hover {
+    background: #128C7E;
+    transform: translateY(-2px);
+}
+
+.btn-pdf {
+    background: #FF4444;
+    color: white;
+    border: none;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-weight: 600;
+    transition: var(--transition-fast);
+    margin: var(--spacing-xs);
+}
+
+.btn-pdf:hover {
+    background: #CC0000;
+    transform: translateY(-2px);
+}
+
 @media (min-width: 992px) {
+
     .shared-charts-grid {
         max-width: 600px;
         margin: 0 auto;
+    }
+}
+
+/* Smart Notifications */
+.smart-notifications {
+    margin-bottom: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.smart-alert {
+    background: rgba(245, 158, 11, 0.15);
+    border-right: 4px solid var(--warning);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    animation: slideIn 0.3s ease;
+}
+
+.smart-alert.danger {
+    background: rgba(239, 68, 68, 0.15);
+    border-right-color: var(--danger);
+}
+
+.smart-alert-icon {
+    font-size: 1.5rem;
+}
+
+.smart-alert-content {
+    flex: 1;
+}
+
+.smart-alert-title {
+    font-weight: 700;
+    display: block;
+    font-size: 0.9rem;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
     }
 }

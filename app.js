@@ -18,8 +18,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Initialize Application
 function initApp() {
+    initTheme();
     setupEventListeners();
     setDefaultDate();
+}
+
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-theme');
+    }
 }
 
 // Setup Event Listeners
@@ -32,7 +40,7 @@ function setupEventListeners() {
     // Back to user selection
     document.getElementById('btn-back-to-users').addEventListener('click', () => {
         app.currentUser = null;
-        document.body.className = ''; // Clear theme
+        document.body.classList.remove('theme-tal', 'theme-ron'); // Keep light-theme if present
         showScreen('user-select');
     });
 
@@ -139,6 +147,9 @@ function setupEventListeners() {
     });
     // Save budget-calculated savings
     document.getElementById('btn-save-budget-savings').addEventListener('click', saveBudgetSavings);
+
+    // Theme Toggle
+    document.getElementById('btn-theme-toggle').addEventListener('click', toggleTheme);
     // Year and Month dropdowns
     document.getElementById('year-select').addEventListener('change', (e) => {
         app.currentYear = parseInt(e.target.value);
@@ -243,6 +254,27 @@ function setupEventListeners() {
         updateSavingsDisplay();
     });
 
+    // History search and filters
+    document.getElementById('history-search').addEventListener('input', renderHistory);
+    document.getElementById('history-filter-category').addEventListener('change', renderHistory);
+    document.getElementById('history-filter-user').addEventListener('change', renderHistory);
+
+    // Share/Export buttons
+    document.getElementById('btn-share-whatsapp').addEventListener('click', shareToWhatsApp);
+    document.getElementById('btn-export-pdf').addEventListener('click', exportToPDF);
+
+    // Recurring Expenses
+    document.getElementById('btn-manage-recurring').addEventListener('click', openRecurringModal);
+    document.getElementById('btn-close-recurring').addEventListener('click', closeRecurringModal);
+    document.getElementById('modal-recurring').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-recurring') closeRecurringModal();
+    });
+    document.getElementById('recurring-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        saveRecurringExpense();
+    });
+    document.getElementById('btn-apply-recurring').addEventListener('click', applyRecurringExpenses);
+
     // Actual income input
     document.getElementById('actual-income-input').addEventListener('change', (e) => {
         const year = app.currentYear.toString();
@@ -263,7 +295,7 @@ function setDefaultDate() {
 function selectUser(userId) {
     if (userId === 'shared') {
         app.currentUser = 'tal'; // Default context
-        document.body.className = '';
+        document.body.classList.remove('theme-tal', 'theme-ron');
         showScreen('shared');
         renderSharedView();
         return;
@@ -272,11 +304,17 @@ function selectUser(userId) {
     app.currentUser = userId;
 
     // Apply theme
-    document.body.className = `theme-${userId}`;
+    document.body.classList.remove('theme-tal', 'theme-ron');
+    document.body.classList.add(`theme-${userId}`);
 
     const user = dataManager.getUser(userId);
     document.getElementById('current-user-name').textContent = user.name;
     showScreen('menu');
+}
+
+function toggleTheme() {
+    const isLight = document.body.classList.toggle('light-theme');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
 }
 
 // Show Screen
@@ -284,6 +322,15 @@ function showScreen(screenId) {
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById(`screen-${screenId}`).classList.add('active');
     app.currentScreen = screenId;
+    window.scrollTo(0, 0);
+
+    if (screenId === 'history') {
+        initHistoryFilters();
+        renderHistory();
+    }
+    if (screenId === 'wishlist') {
+        renderWishlist();
+    }
 }
 
 // Format number as currency
@@ -534,9 +581,13 @@ function renderMonthDashboard() {
         actualIncomeHint.className = 'actual-income-hint';
     }
 
-    // Income Reduction Alert Logic
+    // Smart Notifications & Alerts
+    const notifyContainer = document.getElementById('smart-notifications');
+    notifyContainer.innerHTML = '';
     const alertContainer = document.getElementById('overrun-alert-container');
     alertContainer.innerHTML = '';
+
+    const smartAlerts = [];
 
     if (incomeReductionRatio > 0) {
         const reductionPercent = Math.round(incomeReductionRatio * 100);
@@ -574,8 +625,23 @@ function renderMonthDashboard() {
         let alertClass = '';
         if (adjustedBudget > 0) {
             const p = (categorySpent / adjustedBudget) * 100;
-            if (p >= 100) alertClass = 'over-100';
-            else if (p >= 80) alertClass = 'over-80';
+            if (p >= 100) {
+                alertClass = 'over-100';
+                smartAlerts.push({
+                    type: 'danger',
+                    icon: '🚨',
+                    title: `חריגה בקטגוריית ${category}!`,
+                    desc: `הוצאת ${formatCurrency(categorySpent)} מתוך תקציב של ${formatCurrency(adjustedBudget)}.`
+                });
+            } else if (p >= 80) {
+                alertClass = 'over-80';
+                smartAlerts.push({
+                    type: 'warning',
+                    icon: '⚠️',
+                    title: `שימי לב לקטגוריית ${category}`,
+                    desc: `הגעת ל-${Math.round(p)}% מהתקציב (${formatCurrency(categorySpent)}/${formatCurrency(adjustedBudget)}).`
+                });
+            }
         }
 
         // Show both original and adjusted if different
@@ -601,6 +667,23 @@ function renderMonthDashboard() {
         item.addEventListener('click', () => showCategoryExpenses(category));
         container.appendChild(item);
     });
+
+    // Render Smart Alerts
+    if (smartAlerts.length > 0) {
+        smartAlerts.forEach(alert => {
+            const div = document.createElement('div');
+            div.className = `smart-alert ${alert.type}`;
+            div.innerHTML = `
+                <div class="smart-alert-icon">${alert.icon}</div>
+                <div class="smart-alert-content">
+                    <span class="smart-alert-title">${alert.title}</span>
+                    <span class="smart-alert-desc">${alert.desc}</span>
+                </div>
+            `;
+            notifyContainer.appendChild(div);
+        });
+
+    }
 
     // Populate expense form category dropdown
     populateCategoryDropdown('expense-category');
@@ -1438,6 +1521,63 @@ function renderAnalytics() {
             plugins: { legend: { position: 'top', rtl: true } }
         }
     });
+
+    // Chart 6: Yearly Expense Distribution
+    const yearlyCategoryTotals = {};
+    for (let m = 1; m <= 12; m++) {
+        const month = m.toString().padStart(2, '0');
+        const spent = dataManager.getSpentByCategory(app.currentUser, year, month);
+        for (const [cat, amt] of Object.entries(spent)) {
+            yearlyCategoryTotals[cat] = (yearlyCategoryTotals[cat] || 0) + amt;
+        }
+    }
+
+    const distNames = Object.keys(yearlyCategoryTotals);
+    const distAmounts = Object.values(yearlyCategoryTotals);
+
+    const ctx6 = document.getElementById('expense-distribution-chart').getContext('2d');
+    charts.expenseDist = new Chart(ctx6, {
+        type: 'pie',
+        data: {
+            labels: distNames.length > 0 ? distNames : ['אין הוצאות'],
+            datasets: [{
+                data: distAmounts.length > 0 ? distAmounts : [1],
+                backgroundColor: ['#6366F1', '#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#EF4444', '#06B6D4', '#64748B']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom', rtl: true } }
+        }
+    });
+
+    // Chart 7: Cumulative Savings Growth
+    let currentCumulative = 0;
+    const cumulativeData = monthlyData.map(d => {
+        currentCumulative += d.savings;
+        return currentCumulative;
+    });
+
+    const ctx7 = document.getElementById('savings-growth-chart').getContext('2d');
+    charts.savingsGrowth = new Chart(ctx7, {
+        type: 'line',
+        data: {
+            labels: MONTH_NAMES,
+            datasets: [{
+                label: 'חיסכון מצטבר',
+                data: cumulativeData,
+                borderColor: '#10B981',
+                backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
 }
 // ==========================================
 // History & Search
@@ -1763,5 +1903,255 @@ function populateSharedDateSelectors() {
             monthSelect.appendChild(option);
         }
     }
-    monthSelect.value = app.currentMonth;
+}
+
+function shareToWhatsApp() {
+    const year = app.currentYear.toString();
+    const month = app.currentMonth;
+    const user = dataManager.getUser(app.currentUser);
+    const forecast = dataManager.getForecast(app.currentUser, year, month);
+    const totalSpent = dataManager.getTotalSpent(app.currentUser, year, month);
+    const savings = dataManager.getActualSavings(app.currentUser, year, month).total;
+
+    const message = `*סיכום הוצאות חודשי - ${MONTH_NAMES[parseInt(month) - 1]} ${year}*\n` +
+        `שלום ${user.name},\n` +
+        `💰 הכנסה: ${formatCurrency(forecast.income)}\n` +
+        `📑 הוצאות: ${formatCurrency(totalSpent)}\n` +
+        `🎯 חיסכון: ${formatCurrency(savings)}\n` +
+        `נשלח מאפליקציית ניהול ההוצאות 🚀`;
+
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+}
+
+function exportToPDF() {
+    window.print();
+}
+
+// ==========================================
+// Recurring Expenses Logic
+// ==========================================
+
+function openRecurringModal() {
+    populateCategoryDropdown('recurring-category');
+    renderRecurringList();
+    document.getElementById('modal-recurring').classList.add('active');
+}
+
+function closeRecurringModal() {
+    document.getElementById('modal-recurring').classList.remove('active');
+}
+
+function saveRecurringExpense() {
+    const category = document.getElementById('recurring-category').value;
+    const note = document.getElementById('recurring-note').value;
+    const amount = parseFloat(document.getElementById('recurring-amount').value);
+
+    if (category && note && amount) {
+        dataManager.addRecurringExpense(app.currentUser, { category, note, amount });
+        document.getElementById('recurring-form').reset();
+        renderRecurringList();
+        showToast('הוצאה קבועה נוספה בהצלחה', 'success');
+    }
+}
+
+function renderRecurringList() {
+    const list = document.getElementById('recurring-list');
+    const recurring = dataManager.getRecurringExpenses(app.currentUser);
+    list.innerHTML = '';
+
+    if (recurring.length === 0) {
+        list.innerHTML = '<div class="empty-msg">אין הוצאות קבועות ברשימה</div>';
+        return;
+    }
+
+    recurring.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'recurring-item';
+        div.innerHTML = `
+            <div class="recurring-item-info">
+                <span class="recurring-item-note">${item.note}</span>
+                <span class="recurring-item-meta">${item.category} | ${formatCurrency(item.amount)}</span>
+            </div>
+            <button class="btn-icon" onclick="deleteRecurringExpense('${item.id}')">🗑️</button>
+        `;
+        list.appendChild(div);
+    });
+}
+
+function deleteRecurringExpense(id) {
+    if (confirm('האם את בטוחה שברצונך למחוק הוצאה קבועה זו?')) {
+        dataManager.deleteRecurringExpense(app.currentUser, id);
+        renderRecurringList();
+    }
+}
+
+function applyRecurringExpenses() {
+    const count = dataManager.applyRecurringToMonth(app.currentUser, app.currentYear.toString(), app.currentMonth);
+    if (count > 0) {
+        showToast(`${count} הוצאות קבועות התווספו לחודש זה`, 'success');
+        renderMonthDashboard();
+    } else {
+        showToast('אין הוצאות קבועות להוסיף. הגדירי אותן קודם ב"ניהול קבועות"', 'info');
+    }
+}
+
+// ==========================================
+// Wishlist & Goals
+// ==========================================
+function renderWishlist() {
+    const grid = document.getElementById('wishlist-grid');
+    const goals = dataManager.getWishlist(app.currentUser);
+    grid.innerHTML = '';
+
+    // Total savings across all years for context? 
+    // Usually goals are against a total pool.
+    // Let's get "Total Savings Ever" (simplified to all years in history)
+    const totalSavings = dataManager.getTotalSavingsEver(app.currentUser);
+
+    if (goals.length === 0) {
+        grid.innerHTML = '<div class="empty-msg">אין יעדים עדיין. הוסיפי אחד! 🎯</div>';
+        return;
+    }
+
+    goals.forEach(goal => {
+        const target = goal.targetAmount || 1;
+        // Use either the manually saved amount or the "share" of total savings if we want it automated.
+        // For now, let's stick to the manually saved/tracked amount + a visual of total pool.
+        const reached = goal.savedAmount || 0;
+        const percent = Math.min(Math.round((reached / target) * 100), 100);
+
+        const card = document.createElement('div');
+        card.className = 'goal-card';
+        card.innerHTML = `
+            <div class="goal-header">
+                <span class="goal-title">${goal.name}</span>
+                <div class="goal-actions">
+                    <button class="btn-icon" onclick="openEditGoalModal('${goal.id}')">✏️</button>
+                    <button class="btn-icon" onclick="deleteGoal('${goal.id}')">🗑️</button>
+                </div>
+            </div>
+            <div class="goal-progress-container">
+                <div class="goal-progress-fill" style="width: ${percent}%"></div>
+            </div>
+            <div class="goal-footer">
+                <span>${formatCurrency(reached)} מתוך ${formatCurrency(target)}</span>
+                <span>${percent}% השגת</span>
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+// ==========================================
+// History & Search Logic
+// ==========================================
+
+function renderHistory() {
+    const searchInput = document.getElementById('history-search');
+    const categoryFilter = document.getElementById('history-filter-category').value;
+    const userFilter = document.getElementById('history-filter-user').value;
+    const searchTerm = searchInput.value.toLowerCase();
+
+    let allExpenses = [];
+    const usersToSearch = userFilter === 'all' ? ['tal', 'ron'] : [app.currentUser];
+
+    usersToSearch.forEach(u => {
+        const user = dataManager.getUser(u);
+        if (user && user.expenses) {
+            for (const monthKey in user.expenses) {
+                user.expenses[monthKey].forEach(e => {
+                    allExpenses.push({ ...e, userId: u, monthKey });
+                });
+            }
+        }
+    });
+
+    // Filter and sort
+    const filtered = allExpenses.filter(e => {
+        const matchesSearch = !searchTerm ||
+            (e.note && e.note.toLowerCase().includes(searchTerm)) ||
+            (e.category && e.category.toLowerCase().includes(searchTerm)) ||
+            (e.amount.toString().includes(searchTerm));
+        const matchesCategory = !categoryFilter || categoryFilter === 'all' || e.category === categoryFilter;
+        return matchesSearch && matchesCategory;
+    }).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    const tbody = document.getElementById('history-table-body');
+    tbody.innerHTML = '';
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-secondary);">אין נתונים להצגה</td></tr>';
+        return;
+    }
+
+    // Limit to 200 recent for performance
+    const displayList = searchTerm ? filtered : filtered.slice(0, 200);
+
+    displayList.forEach(expense => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${formatDate(expense.date)}</td>
+            <td>${expense.category}</td>
+            <td class="note-cell">${expense.note || '-'}</td>
+            <td class="amount-cell">${formatCurrency(expense.amount)}</td>
+            <td style="text-align: center">${expense.userId === 'tal' ? '💖' : '💙'}</td>
+        `;
+        tr.addEventListener('click', () => {
+            const [year, month] = expense.monthKey.split('-');
+            app.currentYear = parseInt(year);
+            app.currentMonth = month;
+            openEditExpenseModal(expense);
+        });
+        tbody.appendChild(tr);
+    });
+}
+
+function initHistoryFilters() {
+    const catSelect = document.getElementById('history-filter-category');
+    const categories = dataManager.getCategories('tal');
+    const ronCats = dataManager.getCategories('ron');
+    const allCats = [...new Set([...categories, ...ronCats])];
+
+    catSelect.innerHTML = '<option value="all">כל הקטגוריות</option>';
+    allCats.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        catSelect.appendChild(opt);
+    });
+}
+
+// ==========================================
+// Savings Goals Management
+// ==========================================
+
+function openWishlistModal() {
+    // We'll reuse a generic prompt for simplicity or add a proper modal later
+    const name = prompt('שם היעד (למשל: טיול לתאילנד):');
+    if (!name) return;
+    const amount = parseFloat(prompt('סכום היעד:'));
+    if (isNaN(amount)) return;
+
+    dataManager.addWishlistGoal(app.currentUser, { name, targetAmount: amount, savedAmount: 0 });
+    renderWishlist();
+}
+
+function openEditGoalModal(id) {
+    const goals = dataManager.getWishlist(app.currentUser);
+    const goal = goals.find(g => g.id === id);
+    if (!goal) return;
+
+    const amount = parseFloat(prompt(`עדכני סכום שנצבר עבור "${goal.name}":`, goal.savedAmount));
+    if (isNaN(amount)) return;
+
+    dataManager.updateWishlistGoal(app.currentUser, id, { savedAmount: amount });
+    renderWishlist();
+}
+
+function deleteGoal(id) {
+    if (confirm('האם למחוק יעד זה?')) {
+        dataManager.deleteWishlistGoal(app.currentUser, id);
+        renderWishlist();
+    }
 }

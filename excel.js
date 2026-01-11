@@ -16,29 +16,67 @@ const ExcelManager = {
         const categoriesSheet = XLSX.utils.json_to_sheet(categoriesData);
         XLSX.utils.book_append_sheet(workbook, categoriesSheet, 'קטגוריות');
 
-        // Sheet 2: Forecasts (all months)
+        // Sheet 2: Incomes & Savings (all months)
+        const incomeData = [];
+        const yearsSet = new Set();
+        for (const y in user.forecasts) yearsSet.add(y);
+        for (const k in user.expenses) yearsSet.add(k.split('-')[0]);
+
+        const sortedYears = [...yearsSet].sort();
+
+        sortedYears.forEach(year => {
+            for (let m = 1; m <= 12; m++) {
+                const month = m.toString().padStart(2, '0');
+                const forecast = dataManager.getForecast(userId, year, month);
+                const actualSavings = dataManager.getActualSavings(userId, year, month);
+                const totalSpent = dataManager.getTotalSpent(userId, year, month);
+
+                // Only add if there is some data
+                if (forecast.income > 0 || forecast.actualIncome !== null || actualSavings.total > 0 || totalSpent > 0) {
+                    incomeData.push({
+                        'שנה': year,
+                        'חודש': MONTH_NAMES[m - 1],
+                        'הכנסה צפויה': forecast.income || 0,
+                        'הכנסה בפועל': forecast.actualIncome !== null ? forecast.actualIncome : forecast.income,
+                        'סה"כ הוצאות': totalSpent,
+                        'חיסכון בנק': actualSavings.bank || 0,
+                        'חיסכון פנסיה': actualSavings.pension || 0,
+                        'סה"כ חיסכון': actualSavings.total || 0,
+                        'לא מתועד (נעלם)': (forecast.actualIncome !== null ? forecast.actualIncome : forecast.income) - totalSpent - actualSavings.total
+                    });
+                }
+            }
+        });
+
+        if (incomeData.length > 0) {
+            const incomeSheet = XLSX.utils.json_to_sheet(incomeData);
+            XLSX.utils.book_append_sheet(workbook, incomeSheet, 'הכנסות וחסכונות');
+        }
+
+        // Sheet 3: Forecasts (Detailed Budgets)
         const forecastsData = [];
-        for (const year in user.forecasts) {
-            for (const month in user.forecasts[year]) {
-                const forecast = user.forecasts[year][month];
+        sortedYears.forEach(year => {
+            for (let m = 1; m <= 12; m++) {
+                const month = m.toString().padStart(2, '0');
+                const forecast = dataManager.getForecast(userId, year, month);
                 const row = {
                     'שנה': year,
-                    'חודש': MONTH_NAMES[parseInt(month) - 1],
-                    'הכנסה צפויה': forecast.income || 0
+                    'חודש': MONTH_NAMES[m - 1],
+                    'תחזית הכנסה': forecast.income || 0
                 };
-                // Add budget for each category
                 user.categories.forEach(cat => {
                     row[`תקציב: ${cat}`] = forecast.budgets[cat] || 0;
                 });
                 forecastsData.push(row);
             }
-        }
+        });
+
         if (forecastsData.length > 0) {
             const forecastsSheet = XLSX.utils.json_to_sheet(forecastsData);
-            XLSX.utils.book_append_sheet(workbook, forecastsSheet, 'תחזיות');
+            XLSX.utils.book_append_sheet(workbook, forecastsSheet, 'תחזיות מפורטות');
         }
 
-        // Sheet 3: All Expenses
+        // Sheet 4: All Expenses
         const expensesData = [];
         for (const monthKey in user.expenses) {
             user.expenses[monthKey].forEach(expense => {

@@ -372,6 +372,24 @@ class DataManager {
         return { bank: bankTotal, pension: pensionTotal, total: bankTotal + pensionTotal };
     }
 
+    // Get total savings ever
+    getTotalSavingsEver(userId) {
+        const user = this.data.users[userId];
+        if (!user.savings) return 0;
+
+        let total = 0;
+        // Collect all years from forecasts and expenses
+        const years = new Set();
+        for (const y in user.forecasts) years.add(y);
+        for (const k in user.expenses) years.add(k.split('-')[0]);
+
+        years.forEach(year => {
+            const yearly = this.getYearlySavingsTotals(userId, year);
+            total += yearly.total;
+        });
+        return total;
+    }
+
     // Copy budget from one month to all months in the year
     copyBudgetToYear(userId, year, sourceMonth) {
         const sourceForecast = this.getForecast(userId, year, sourceMonth);
