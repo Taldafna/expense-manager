@@ -122,6 +122,9 @@ function setupEventListeners() {
             if (tabName === 'budgets') {
                 renderBudgetTable();
             }
+            if (tabName === 'income') {
+                renderIncomeTable(); // Refresh to show updated calculated savings
+            }
         });
     });
 
