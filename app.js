@@ -400,8 +400,44 @@ function renderBudgetTable() {
         input.addEventListener('change', (e) => {
             const category = e.target.dataset.category;
             dataManager.setBudget(app.currentUser, app.currentYear.toString(), month, category, e.target.value);
+            updateBudgetSummary(); // Update summary in real-time
+        });
+        // Also update on input for immediate feedback
+        input.addEventListener('input', (e) => {
+            updateBudgetSummary();
         });
     });
+
+    // Initial summary update
+    updateBudgetSummary();
+}
+
+function updateBudgetSummary() {
+    const month = document.getElementById('budget-month-select').value;
+    const forecast = dataManager.getForecast(app.currentUser, app.currentYear.toString(), month);
+    const income = forecast.income || 0;
+
+    // Calculate total from current input values (for real-time feedback)
+    let totalBudget = 0;
+    document.querySelectorAll('#budget-table-body input').forEach(input => {
+        totalBudget += parseFloat(input.value) || 0;
+    });
+
+    const savings = Math.max(0, income - totalBudget);
+
+    document.getElementById('budget-summary-income').textContent = formatCurrency(income);
+    document.getElementById('budget-summary-total').textContent = formatCurrency(totalBudget);
+    document.getElementById('budget-summary-savings').textContent = formatCurrency(savings);
+
+    // Update highlight class based on savings
+    const savingsItem = document.querySelector('.budget-summary-item.highlight');
+    if (savingsItem) {
+        if (savings <= 0) {
+            savingsItem.classList.add('negative');
+        } else {
+            savingsItem.classList.remove('negative');
+        }
+    }
 }
 
 // ==========================================
