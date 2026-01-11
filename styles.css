@@ -478,6 +478,24 @@ body::before {
     transform: scale(1.02);
 }
 
+.btn-save-savings {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: linear-gradient(135deg, var(--success), #34d399);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: white;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: var(--transition-fast);
+}
+
+.btn-save-savings:hover {
+    opacity: 0.9;
+    transform: scale(1.02);
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+}
+
 /* Budget Summary Card */
 .budget-summary-card {
     background: var(--bg-card);

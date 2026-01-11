@@ -137,7 +137,8 @@ function setupEventListeners() {
         dataManager.copyBudgetToYear(app.currentUser, app.currentYear.toString(), month);
         showToast('התקציב הועתק לכל החודשים', 'success');
     });
-
+    // Save budget-calculated savings
+    document.getElementById('btn-save-budget-savings').addEventListener('click', saveBudgetSavings);
     // Year and Month dropdowns
     document.getElementById('year-select').addEventListener('change', (e) => {
         app.currentYear = parseInt(e.target.value);
@@ -437,6 +438,27 @@ function updateBudgetSummary() {
         }
     }
 }
+
+function saveBudgetSavings() {
+    const month = document.getElementById('budget-month-select').value;
+    const year = app.currentYear.toString();
+    const forecast = dataManager.getForecast(app.currentUser, year, month);
+    const income = forecast.income || 0;
+
+    // Calculate total from current input values (for real-time feedback)
+    let totalBudget = 0;
+    document.querySelectorAll('#budget-table-body input').forEach(input => {
+        totalBudget += parseFloat(input.value) || 0;
+    });
+
+    const savings = income - totalBudget;
+
+    // Save to the plannedSavings field in the data
+    dataManager.setPlannedSavings(app.currentUser, year, month, savings);
+
+    showToast(`החיסכון המתוכנן לחודש ${MONTH_NAMES[parseInt(month) - 1]} עודכן ל-${formatCurrency(savings)}`, 'success');
+}
+
 
 // ==========================================
 // Monthly Dashboard

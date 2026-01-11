@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ניהול הוצאות | טל ורון</title>
     <meta name="description" content="מערכת לניהול הוצאות והכנסות חודשיות">
-    <link rel="stylesheet" href="styles.css?v=22">
+    <link rel="stylesheet" href="styles.css?v=23">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#6366F1">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -137,6 +137,7 @@
                         <label>בחר חודש:</label>
                         <select id="budget-month-select"></select>
                         <button class="btn-copy" id="btn-copy-budget">העתק לכל השנה</button>
+                        <button class="btn-save-savings" id="btn-save-budget-savings">💾 שמור עדכון חיסכון</button>
                     </div>
                     <div class="budget-summary-card" id="budget-summary-card">
                         <div class="budget-summary-item">
@@ -707,7 +708,7 @@
 
     <script src="data.js?v=9"></script>
     <script src="excel.js?v=7"></script>
-    <script src="app.js?v=19"></script>
+    <script src="app.js?v=20"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
