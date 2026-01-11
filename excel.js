@@ -40,7 +40,7 @@ const ExcelManager = {
                         'הכנסה בפועל': forecast.actualIncome !== null ? forecast.actualIncome : forecast.income,
                         'סה"כ הוצאות': totalSpent,
                         'חיסכון בנק': actualSavings.bank || 0,
-                        'חיסכון פנסיה': actualSavings.pension || 0,
+                        'חיסכון קופת גמל': actualSavings.pension || 0,
                         'סה"כ חיסכון': actualSavings.total || 0,
                         'לא מתועד (נעלם)': (forecast.actualIncome !== null ? forecast.actualIncome : forecast.income) - totalSpent - actualSavings.total
                     });
