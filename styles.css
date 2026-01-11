@@ -1645,25 +1645,54 @@ form {
 /* Dashboard Actions */
 .dashboard-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--spacing-sm);
     margin: var(--spacing-md) 0;
 }
 
-.btn-secondary {
-    flex: 1;
-    padding: var(--spacing-sm);
+.btn-secondary,
+.btn-whatsapp,
+.btn-pdf {
+    flex: 1 1 calc(50% - var(--spacing-sm));
+    min-width: 140px;
+    padding: var(--spacing-md) var(--spacing-sm);
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     color: var(--text-primary);
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 500;
     transition: var(--transition-normal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.btn-whatsapp {
+    background: rgba(37, 211, 102, 0.1);
+    border-color: rgba(37, 211, 102, 0.3);
+}
+
+.btn-whatsapp:hover {
+    background: rgba(37, 211, 102, 0.2);
+    border-color: rgb(37, 211, 102);
+}
+
+.btn-pdf {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.btn-pdf:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgb(239, 68, 68);
 }
 
 .btn-secondary:hover {
     background: var(--bg-card);
-    border-color: var(--accent);
+    border-color: var(--accent-primary);
 }
 
 /* History & Search */
