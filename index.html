@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ניהול הוצאות | טל ורון</title>
     <meta name="description" content="מערכת לניהול הוצאות והכנסות חודשיות">
-    <link rel="stylesheet" href="styles.css?v=32">
+    <link rel="stylesheet" href="styles.css?v=34">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#6366F1">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -98,6 +98,16 @@
                     <span class="nav-icon">💾</span>
                     <span class="nav-title">ייצוא/ייבוא</span>
                     <span class="nav-desc">גיבוי ושחזור נתונים</span>
+                </button>
+                <button class="nav-card" data-screen="simulator">
+                    <span class="nav-icon">🔮</span>
+                    <span class="nav-title">סימולטור "מה אם"</span>
+                    <span class="nav-desc">חיזוי החלטות גדולות</span>
+                </button>
+                <button class="nav-card" data-screen="insights">
+                    <span class="nav-icon">🎁</span>
+                    <span class="nav-title">סיכום חודשי (Wrapped)</span>
+                    <span class="nav-desc">תובנות והישגים חגיגיים</span>
                 </button>
             </nav>
         </div>
@@ -244,6 +254,7 @@
                 <div class="dashboard-actions">
                     <button class="btn-secondary" id="btn-manage-recurring">📂 ניהול קבועות</button>
                     <button class="btn-secondary" id="btn-apply-recurring">🔄 החל קבועות</button>
+                    <button class="btn-secondary" id="btn-apply-rollover">♻️ החל יתרות (Rollover)</button>
                     <button class="btn-whatsapp" id="btn-share-whatsapp">📱 שתף בוואטסאפ</button>
                     <button class="btn-pdf" id="btn-export-pdf">📄 ייצוא ל-PDF</button>
                 </div>
@@ -310,6 +321,10 @@
                         <label for="expense-note">הערה (אופציונלי)</label>
                         <input type="text" id="expense-note" placeholder="תיאור קצר">
                     </div>
+                    <div class="form-group">
+                        <label>📄 צירוף קבלה (אופציונלי)</label>
+                        <input type="file" id="expense-doc" accept="image/*" class="file-input">
+                    </div>
                     <div class="form-group installment-toggle">
                         <label class="checkbox-label">
                             <input type="checkbox" id="expense-installment">
@@ -358,6 +373,15 @@
                     <div class="form-group">
                         <label for="edit-expense-note">הערה</label>
                         <input type="text" id="edit-expense-note">
+                    </div>
+                    <div class="form-group">
+                        <label>📄 עדכון קבלה (אופציונלי)</label>
+                        <input type="file" id="edit-expense-doc" accept="image/*" class="file-input">
+                    </div>
+                    <div id="edit-doc-preview" class="hidden" style="margin-bottom: var(--spacing-md);">
+                        <label>קבלה קיימת:</label>
+                        <img id="edit-doc-img" src=""
+                            style="max-width: 100%; cursor: pointer; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="btn-submit">שמור שינויים</button>
@@ -712,8 +736,79 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Fair Share Calculator -->
+                <div class="fair-share-card glass-card">
+                    <h3>⚖️ מחשבון Fair Share (חלוקה לפי הכנסה)</h3>
+                    <p class="fair-share-desc">חישוב חלוקה הוגנת המבוססת על יחס ההכנסות של טל ורון.</p>
+                    <div id="fair-share-results" class="fair-share-grid">
+                        <!-- Content via JS -->
+                    </div>
+                </div>
             </div>
             <div class="debug-version">v25 - System Upgrade</div>
+        </div>
+
+        <!-- Financial Simulator Screen -->
+        <div id="screen-simulator" class="screen">
+            <header class="header">
+                <button class="btn-back" data-back="menu">
+                    <span class="icon">←</span>
+                </button>
+                <h1 class="header-title">סימולטור "מה אם?"</h1>
+            </header>
+            <div class="simulator-container glass-card">
+                <p class="simulator-intro">בדקו איך החלטה גדולה תשפיע על העתיד הכלכלי שלכם ב-5 השנים הבאות.</p>
+                <div class="form-group">
+                    <label>תיאור ההחלטה</label>
+                    <input type="text" id="sim-desc" placeholder="למשל: קניית רכב חדש">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>סכום רכישה (₪)</label>
+                        <input type="number" id="sim-amount" value="50000">
+                    </div>
+                    <div class="form-group">
+                        <label>החזר חודשי (₪)</label>
+                        <input type="number" id="sim-monthly" value="1000">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>משך ההחזר (חודשים)</label>
+                    <input type="number" id="sim-duration" value="36">
+                </div>
+                <button class="btn-primary" id="btn-run-sim" style="width: 100%; margin-top: 10px;">🔮 הרץ
+                    סימולציה</button>
+
+                <div id="sim-results" class="hidden" style="margin-top: 20px;">
+                    <div class="sim-insights">
+                        <div class="insight-card">
+                            <span class="label">יתרת הון ב-2031 (ללא רכישה)</span>
+                            <span class="value" id="sim-capital-no">₪0</span>
+                        </div>
+                        <div class="insight-card highlight">
+                            <span class="label">יתרת הון ב-2031 (עם הרכישה)</span>
+                            <span class="value" id="sim-capital-yes">₪0</span>
+                        </div>
+                    </div>
+                    <div class="chart-container" style="height: 300px; margin-top: 20px;">
+                        <canvas id="sim-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Insights (Wrapped) Screen -->
+        <div id="screen-insights" class="screen">
+            <header class="header">
+                <button class="btn-back" data-back="menu">
+                    <span class="icon">←</span>
+                </button>
+                <h1 class="header-title">הסיכום החגיגי שלכם</h1>
+            </header>
+            <div id="insights-content" class="insights-container">
+                <!-- Dynamically generated -->
+            </div>
         </div>
 
         <!-- Export/Import Screen -->
@@ -753,9 +848,9 @@
         </div>
     </div>
 
-    <script src="data.js?v=33"></script>
-    <script src="excel.js?v=33"></script>
-    <script src="app.js?v=33"></script>
+    <script src="data.js?v=34"></script>
+    <script src="excel.js?v=34"></script>
+    <script src="app.js?v=34"></script>
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {

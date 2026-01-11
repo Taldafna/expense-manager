@@ -624,6 +624,63 @@ class DataManager {
         }
         return false;
     }
+
+    // Advanced Personal Features
+    // ==========================================
+
+    /**
+     * Get rollover from previous month for a category
+     */
+    getRolloverForCategory(userId, year, month, category) {
+        let prevMonthNum = parseInt(month) - 1;
+        let prevYearNum = parseInt(year);
+        if (prevMonthNum === 0) {
+            prevMonthNum = 12;
+            prevYearNum--;
+        }
+        const prevMonth = prevMonthNum.toString().padStart(2, '0');
+        const prevYear = prevYearNum.toString();
+
+        const forecast = this.getForecast(userId, prevYear, prevMonth);
+        const budgets = forecast.budgets || {};
+        const budget = budgets[category] || 0;
+        const spent = this.getSpentByCategory(userId, prevYear, prevMonth, category);
+
+        return Math.max(0, budget - spent);
+    }
+
+    /**
+     * Apply a surplus amount from a category to a savings goal
+     */
+    applySurplusToGoal(userId, goalId, amount) {
+        const wishlist = this.getWishlist(userId);
+        const goal = wishlist.find(g => g.id === goalId);
+        if (goal) {
+            goal.savedAmount = (goal.savedAmount || 0) + amount;
+            this.saveData();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Calculate Fair Share split between Tal and Ron
+     */
+    getFairShareSplit(year, month) {
+        const talIncome = this.getEffectiveIncome('tal', year, month);
+        const ronIncome = this.getEffectiveIncome('ron', year, month);
+        const totalIncome = talIncome + ronIncome;
+
+        if (totalIncome === 0) return { talRatio: 0.5, ronRatio: 0.5 };
+
+        return {
+            talRatio: talIncome / totalIncome,
+            ronRatio: ronIncome / totalIncome,
+            talIncome,
+            ronIncome,
+            totalIncome
+        };
+    }
 }
 
 // Create global instance

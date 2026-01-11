@@ -57,6 +57,8 @@ function setupEventListeners() {
             if (screen === 'history') renderHistory();
             if (screen === 'wishlist') renderWishlist();
             if (screen === 'shared') renderSharedView();
+            if (screen === 'simulator') renderSimulator();
+            if (screen === 'insights') renderInsights();
         });
     });
 
@@ -89,6 +91,10 @@ function setupEventListeners() {
     document.getElementById('btn-close-recurring').addEventListener('click', closeRecurringModal);
     document.getElementById('btn-save-recurring-template').addEventListener('click', saveRecurringTemplate);
     document.getElementById('btn-apply-recurring').addEventListener('click', applyRecurring);
+    document.getElementById('btn-apply-rollover').addEventListener('click', applyRollover);
+
+    // Simulator listeners
+    document.getElementById('btn-run-sim').addEventListener('click', runSimulation);
 
     // Back buttons
     document.querySelectorAll('.btn-back[data-back]').forEach(btn => {
@@ -327,6 +333,234 @@ function showScreen(screenId) {
     if (screenId === 'wishlist') {
         renderWishlist();
     }
+    if (screenId === 'shared') {
+        renderSharedView();
+    }
+    if (screenId === 'simulator') {
+        renderSimulator();
+    }
+    if (screenId === 'insights') {
+        renderInsights();
+    }
+}
+
+/* ==========================================
+   Advanced Features Implementation
+   ========================================== */
+
+// 1. Financial Simulator
+function renderSimulator() {
+    // Basic setup, actual simulation on button click
+    document.getElementById('sim-results').classList.add('hidden');
+}
+
+let simChart = null;
+function runSimulation() {
+    const amount = parseFloat(document.getElementById('sim-amount').value) || 0;
+    const monthly = parseFloat(document.getElementById('sim-monthly').value) || 0;
+    const duration = parseInt(document.getElementById('sim-duration').value) || 0;
+
+    const currentTotalSavings = dataManager.getTotalSavingsEver(app.currentUser);
+    const monthlySavingsRate = 3000; // Simplified average monthly savings surplus
+
+    const projectionNo = [];
+    const projectionYes = [];
+    const labels = [];
+
+    let capitalNo = currentTotalSavings;
+    let capitalYes = currentTotalSavings - amount;
+
+    for (let i = 0; i <= 60; i++) {
+        if (i % 6 === 0) {
+            labels.push(`חודש ${i}`);
+            projectionNo.push(capitalNo);
+            projectionYes.push(capitalYes);
+        }
+        capitalNo += monthlySavingsRate;
+        capitalYes += monthlySavingsRate;
+        if (i < duration) {
+            capitalYes -= monthly;
+        }
+    }
+
+    document.getElementById('sim-results').classList.remove('hidden');
+    document.getElementById('sim-capital-no').textContent = formatCurrency(capitalNo);
+    document.getElementById('sim-capital-yes').textContent = formatCurrency(capitalYes);
+
+    const ctx = document.getElementById('sim-chart').getContext('2d');
+    if (simChart) simChart.destroy();
+
+    simChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'ללא הרכישה',
+                    data: projectionNo,
+                    borderColor: '#6366F1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'עם הרכישה',
+                    data: projectionYes,
+                    borderColor: '#F59E0B',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { color: '#ffffff', font: { family: 'inherit' } } }
+            },
+            scales: {
+                y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: 'rgba(255,255,255,0.7)', callback: value => '₪' + value.toLocaleString() } },
+                x: { grid: { display: false }, ticks: { color: 'rgba(255,255,255,0.7)' } }
+            }
+        }
+    });
+}
+
+// 7. Flexible Budget (Rollover)
+function applyRollover() {
+    const userId = app.currentUser;
+    const year = app.currentYear.toString();
+    const month = app.currentMonth;
+    const user = dataManager.getUser(userId);
+
+    let rolloverCount = 0;
+    let totalRollover = 0;
+
+    user.categories.forEach(cat => {
+        const rollover = dataManager.getRolloverForCategory(userId, year, month, cat);
+        if (rollover > 0) {
+            const currentBudget = dataManager.getForecast(userId, year, month).budgets[cat] || 0;
+            dataManager.setBudget(userId, year, month, cat, currentBudget + rollover);
+            rolloverCount++;
+            totalRollover += rollover;
+        }
+    });
+
+    if (rolloverCount > 0) {
+        showToast(`בוצע גלגול יתרות: ${rolloverCount} קטגוריות עודכנו בסך ${formatCurrency(totalRollover)}`, 'success');
+        renderMonthDashboard();
+    } else {
+        showToast('לא נמצאו יתרות פנויות מחודש שעבר', 'warning');
+    }
+}
+
+// 3. Monthly Insights (Wrapped)
+function renderInsights() {
+    const container = document.getElementById('insights-content');
+    container.innerHTML = '';
+
+    const year = app.currentYear.toString();
+    const month = app.currentMonth;
+    const totalSpent = dataManager.getTotalSpent(app.currentUser, year, month);
+    const savings = dataManager.getActualSavings(app.currentUser, year, month).total;
+    const topCategory = getTopCategory(app.currentUser, year, month);
+
+    const cards = [
+        {
+            title: 'בואו נראה איך היה החודש...',
+            content: `חודש ${MONTH_NAMES[parseInt(month) - 1]} ${year}`,
+            stat: 'סיכום חגיגי',
+            emoji: '✨'
+        },
+        {
+            title: 'סה"כ הוצאות חודשיות',
+            content: 'סכום שיצא מהכיס החודש:',
+            stat: formatCurrency(totalSpent),
+            emoji: '💸'
+        },
+        {
+            title: 'הקטגוריה הכי פעילה',
+            content: `נראה שביליתם הרבה ב-${topCategory.name}:`,
+            stat: formatCurrency(topCategory.amount),
+            emoji: '🔥'
+        },
+        {
+            title: 'אלוף החיסכון!',
+            content: 'הצלחתם לשים בצד החודש:',
+            stat: formatCurrency(savings),
+            emoji: '💰'
+        }
+    ];
+
+    cards.forEach((c, i) => {
+        const card = document.createElement('div');
+        card.className = 'wrapped-card';
+        card.style.animationDelay = `${i * 0.2}s`;
+        card.innerHTML = `
+            <div class="wrapped-title">${c.title}</div>
+            <div class="wrapped-subtitle">${c.content}</div>
+            <div class="wrapped-stat">${c.stat}</div>
+            <div style="font-size: 5rem">${c.emoji}</div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function getTopCategory(userId, year, month) {
+    const user = dataManager.getUser(userId);
+    let top = { name: 'אין', amount: 0 };
+    user.categories.forEach(cat => {
+        const spent = dataManager.getSpentByCategory(userId, year, month, cat);
+        if (spent > top.amount) {
+            top = { name: cat, amount: spent };
+        }
+    });
+    return top;
+}
+
+// 4. Fair Share (In Shared View)
+function updateFairShareUI() {
+    const year = app.currentYear.toString();
+    const month = app.currentMonth;
+    const split = dataManager.getFairShareSplit(year, month);
+    const resultsContainer = document.getElementById('fair-share-results');
+
+    const talSpent = dataManager.getTotalSpent('tal', year, month);
+    const ronSpent = dataManager.getTotalSpent('ron', year, month);
+    const totalSharedExpenses = talSpent + ronSpent;
+
+    resultsContainer.innerHTML = `
+        <div class="fair-share-item">
+            <span class="label">יחס הכנסות (טל / רון)</span>
+            <span class="value">${(split.talRatio * 100).toFixed(0)}% / ${(split.ronRatio * 100).toFixed(0)}%</span>
+        </div>
+        <div class="fair-share-item">
+            <span class="label">חלק הוגן - טל</span>
+            <span class="value">${formatCurrency(totalSharedExpenses * split.talRatio)}</span>
+        </div>
+        <div class="fair-share-item">
+            <span class="label">חלק הוגן - רון</span>
+            <span class="value">${formatCurrency(totalSharedExpenses * split.ronRatio)}</span>
+        </div>
+        <div class="fair-share-item" style="grid-column: 1 / -1; background: var(--accent-gradient); color: white;">
+            <span class="label" style="color: rgba(255,255,255,0.8)">הצעה להעברה בין בני הזוג</span>
+            <span class="value" style="color: white; font-size: 1.3rem;">
+                ${split.talRatio > 0.5 ? 'רון צירך להעביר לטל' : 'טל צריכה להעביר לרון'} 
+                ${formatCurrency(Math.abs(totalSharedExpenses * split.talRatio - talSpent))}
+            </span>
+        </div>
+    `;
+}
+
+// 6. Document Upload Helper
+async function getFileBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
 }
 
 // Format number as currency
@@ -678,7 +912,27 @@ function renderMonthDashboard() {
             `;
             notifyContainer.appendChild(div);
         });
+    }
 
+    // Check for potential rollover
+    let totalPotentialRollover = 0;
+    categories.forEach(cat => {
+        totalPotentialRollover += dataManager.getRolloverForCategory(app.currentUser, year, month, cat);
+    });
+
+    if (totalPotentialRollover > 0) {
+        const div = document.createElement('div');
+        div.className = 'smart-alert';
+        div.style.borderRightColor = 'var(--success)';
+        div.style.background = 'rgba(16, 185, 129, 0.1)';
+        div.innerHTML = `
+            <div class="smart-alert-icon">♻️</div>
+            <div class="smart-alert-content">
+                <span class="smart-alert-title">יש לך יתרות פנויות מחודש שעבר!</span>
+                <span style="font-size: 0.8rem; opacity: 0.8">נשארו ${formatCurrency(totalPotentialRollover)} שלא נוצלו. לחצי על "החל יתרות" כדי להגדיל את התקציב החודש.</span>
+            </div>
+        `;
+        notifyContainer.appendChild(div);
     }
 
     // Populate expense form category dropdown
@@ -868,7 +1122,7 @@ function closeExpenseModal() {
     document.getElementById('modal-expense').classList.remove('active');
 }
 
-function saveExpense() {
+async function saveExpense() {
     const isInstallment = document.getElementById('expense-installment').checked;
     const category = document.getElementById('expense-category').value;
     const date = document.getElementById('expense-date').value;
@@ -906,15 +1160,24 @@ function saveExpense() {
         const amount = document.getElementById('expense-amount').value;
         const [year, month] = date.split('-');
 
+        // Handle document
+        const docFile = document.getElementById('expense-doc').files[0];
+        let docBase64 = null;
+        if (docFile) {
+            docBase64 = await getFileBase64(docFile);
+        }
+
         dataManager.addExpense(app.currentUser, year, month, {
             amount: parseFloat(amount),
             category,
             date,
-            note
+            note,
+            doc: docBase64
         });
 
         closeExpenseModal();
         showToast('ההוצאה נוספה בהצלחה', 'success');
+        document.getElementById('expense-doc').value = ''; // Reset input
     }
 
     // Refresh dashboard
@@ -941,7 +1204,7 @@ function showCategoryExpenses(category) {
             item.className = 'expense-item';
             item.innerHTML = `
                 <div class="expense-info">
-                    <span class="expense-note">${expense.note || expense.category}</span>
+                    <span class="expense-note">${expense.note || expense.category} ${expense.doc ? '📄' : ''}</span>
                     <span class="expense-date">${formatDate(expense.date)}</span>
                 </div>
                 <span class="expense-amount">${formatCurrency(expense.amount)}</span>
@@ -966,6 +1229,17 @@ function openEditExpenseModal(expense) {
     document.getElementById('edit-expense-date').value = expense.date;
     document.getElementById('edit-expense-note').value = expense.note || '';
 
+    const preview = document.getElementById('edit-doc-preview');
+    const img = document.getElementById('edit-doc-img');
+    if (expense.doc) {
+        preview.classList.remove('hidden');
+        img.src = expense.doc;
+        img.onclick = () => window.open(expense.doc);
+    } else {
+        preview.classList.add('hidden');
+        img.src = '';
+    }
+
     document.getElementById('modal-edit-expense').classList.add('active');
 }
 
@@ -973,7 +1247,7 @@ function closeEditExpenseModal() {
     document.getElementById('modal-edit-expense').classList.remove('active');
 }
 
-function updateExpense() {
+async function updateExpense() {
     const id = document.getElementById('edit-expense-id').value;
     const amount = document.getElementById('edit-expense-amount').value;
     const category = document.getElementById('edit-expense-category').value;
@@ -983,12 +1257,20 @@ function updateExpense() {
     const year = app.currentYear.toString();
     const month = app.currentMonth;
 
-    dataManager.updateExpense(app.currentUser, year, month, id, {
+    // Handle document update
+    const docFile = document.getElementById('edit-expense-doc').files[0];
+    let updateData = {
         amount: parseFloat(amount),
         category,
         date,
         note
-    });
+    };
+
+    if (docFile) {
+        updateData.doc = await getFileBase64(docFile);
+    }
+
+    dataManager.updateExpense(app.currentUser, year, month, id, updateData);
 
     closeEditExpenseModal();
     showToast('ההוצאה עודכנה', 'success');
@@ -1832,6 +2114,9 @@ function renderSharedView() {
 
     // 4. Shared Chart
     renderSharedChart(talSpent, ronSpent);
+
+    // 5. Fair Share UI
+    updateFairShareUI();
 }
 
 function renderSharedChart(talSpent, ronSpent) {
